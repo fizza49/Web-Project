@@ -1,4 +1,3 @@
-
 const express = require('express');
 const { body } = require('express-validator');
 const {
@@ -6,13 +5,12 @@ const {
   loginUser,
   getUserProfile,
   updateUserProfile,
-  forgotPassword,
-  resetPassword,
+  forgotPassword,       
+  resetPassword,         
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-
 
 router.post(
   '/register',
@@ -35,9 +33,7 @@ router.post(
 
 router.post(
   '/forgot-password',
-  [
-    body('email', 'Please include a valid email').isEmail(),
-  ],
+  [ body('email', 'Please include a valid email').isEmail() ],
   forgotPassword
 );
 
@@ -50,6 +46,9 @@ router.post(
   resetPassword
 );
 
-router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
+router
+  .route('/profile')
+  .get(protect, getUserProfile)
+  .put(protect, updateUserProfile);
 
 module.exports = router;

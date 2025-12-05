@@ -25,7 +25,6 @@ const ResetPassword = () => {
       navigate('/forgot-password');
     }
 
-    // Initialize particles for success state
     const initialParticles = Array.from({ length: 15 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -37,7 +36,6 @@ const ResetPassword = () => {
   }, [token, navigate]);
 
   useEffect(() => {
-    // Calculate password strength
     const strength = calculatePasswordStrength(formData.password);
     setPasswordStrength(strength);
   }, [formData.password]);
@@ -110,7 +108,6 @@ const ResetPassword = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Animated background particles */}
         {particles.map(particle => (
           <div
             key={particle.id}
@@ -172,7 +169,6 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-32 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -224,7 +220,6 @@ const ResetPassword = () => {
               </div>
             )}
 
-            {/* Password Field */}
             <div className="space-y-4">
               <label className="block text-gray-800 font-semibold text-lg uppercase tracking-wide">
                 New Password
@@ -258,7 +253,6 @@ const ResetPassword = () => {
                 </button>
               </div>
 
-              {/* Password Strength Meter */}
               {formData.password && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-medium">
@@ -280,7 +274,6 @@ const ResetPassword = () => {
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div className="space-y-4">
               <label className="block text-gray-800 font-semibold text-lg uppercase tracking-wide">
                 Confirm New Password
@@ -314,7 +307,6 @@ const ResetPassword = () => {
                 </button>
               </div>
 
-              {/* Password Match Indicator */}
               {formData.confirmPassword && (
                 <div className={`flex items-center space-x-2 text-sm font-medium ${
                   formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-600'
@@ -334,7 +326,6 @@ const ResetPassword = () => {
               )}
             </div>
 
-            {/* Submit Button */}
             <div className="pt-4">
               <button
                 type="submit"
@@ -357,7 +348,6 @@ const ResetPassword = () => {
               </button>
             </div>
 
-            {/* Back to Login */}
             <div className="text-center pt-4">
               <Link
                 to="/login"
@@ -371,7 +361,6 @@ const ResetPassword = () => {
         </div>
       </div>
 
-      {/* Add custom animations */}
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }

@@ -25,7 +25,7 @@ const userSchema = mongoose.Schema(
       default: 'USD',
     },
     resetPasswordToken: String,
-    resetPasswordExpiry: Date,
+    resetPasswordExpires: Date, 
   },
   {
     timestamps: true,

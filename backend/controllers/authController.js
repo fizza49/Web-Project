@@ -1,127 +1,102 @@
-const crypto = require('crypto');
-const { createNotification } = require('./notificationController');
-
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const { sendPasswordResetEmail, sendPasswordResetConfirmation } = require('../utils/email');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// Register user
 const registerUser = async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { name, email, password } = req.body;
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
+    if (await User.findOne({ email }))
       return res.status(400).json({ message: 'User already exists' });
-    }
 
-    const user = await User.create({
-      name,
-      email,
-      password,
+    const user = await User.create({ name, email, password });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      monthlyBudget: user.monthlyBudget,
+      currency: user.currency,
+      token: generateToken(user._id),
     });
-
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        monthlyBudget: user.monthlyBudget,
-        currency: user.currency,
-        token: generateToken(user._id),
-      });
-    }
   } catch (error) {
-    console.error(error);
+    console.error('Register error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Login user
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+    if (!user || !(await user.matchPassword(password)))
+      return res.status(401).json({ message: 'Invalid email or password' });
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        monthlyBudget: user.monthlyBudget,
-        currency: user.currency,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
-    }
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      monthlyBudget: user.monthlyBudget,
+      currency: user.currency,
+      token: generateToken(user._id),
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get user profile
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (user) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        monthlyBudget: user.monthlyBudget,
-        currency: user.currency,
-      });
-    } else {
-      res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      monthlyBudget: user.monthlyBudget,
+      currency: user.currency,
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Get profile error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Update user profile
 const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (user) {
-      user.name = req.body.name || user.name;
-      user.email = req.body.email || user.email;
-      user.monthlyBudget = req.body.monthlyBudget || user.monthlyBudget;
-      user.currency = req.body.currency || user.currency;
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    user.monthlyBudget = req.body.monthlyBudget || user.monthlyBudget;
+    user.currency = req.body.currency || user.currency;
 
-      if (req.body.password) {
-        user.password = req.body.password;
-      }
+    if (req.body.password) user.password = req.body.password;
 
-      const updatedUser = await user.save();
+    const updatedUser = await user.save();
 
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        monthlyBudget: updatedUser.monthlyBudget,
-        currency: updatedUser.currency,
-        token: generateToken(updatedUser._id),
-      });
-    } else {
-      res.status(404).json({ message: 'User not found' });
-    }
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      monthlyBudget: updatedUser.monthlyBudget,
+      currency: updatedUser.currency,
+      token: generateToken(updatedUser._id),
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Update profile error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -131,70 +106,87 @@ const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user)
+      return res.status(404).json({ success: false, message: 'User not found' });
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    const resetToken = jwt.sign(
+      { id: user._id, type: 'password_reset' }, 
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
+    // Save token and expiry
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpiry = resetTokenExpiry;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // In a real application, you would send an email here
-    // For demo purposes, we'll return the token
-    res.json({
-      message: 'Password reset token generated',
-      resetToken, // In production, remove this and send via email
-      expiry: resetTokenExpiry,
-    });
+    // Send email
+    const emailSent = await sendPasswordResetEmail(user, resetToken);
+    if (!emailSent)
+      return res.status(500).json({ success: false, message: 'Failed to send reset email' });
 
-    // Create notification
-    await createNotification(
-      user._id,
-      'Password Reset Requested',
-      'A password reset has been requested for your account. If this was not you, please secure your account.',
-      'warning'
-    );
+    res.json({ success: true, message: 'Password reset email sent successfully' });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
-// Reset password
 const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
 
+    // Validate input
+    if (!token || !password)
+      return res.status(400).json({ success: false, message: 'Token and password are required' });
+
+    if (password.length < 6)
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters',
+      });
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Additional check for token type
+      if (decoded.type !== 'password_reset') {
+        return res.status(400).json({ success: false, message: 'Invalid token type' });
+      }
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    // Find user with valid token
     const user = await User.findOne({
+      _id: decoded.id,
       resetPasswordToken: token,
-      resetPasswordExpiry: { $gt: Date.now() },
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
 
+    // Update password and clear reset fields
     user.password = password;
     user.resetPasswordToken = undefined;
-    user.resetPasswordExpiry = undefined;
+    user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.json({ message: 'Password reset successfully' });
+    // Send confirmation email
+    await sendPasswordResetConfirmation(user);
 
-    // Create notification
-    await createNotification(
-      user._id,
-      'Password Reset Successful',
-      'Your password has been successfully reset.',
-      'success'
-    );
+    res.json({ success: true, message: 'Password reset successful' });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

@@ -31,6 +31,8 @@ export const authAPI = {
   register: (name, email, password) => API.post('/auth/register', { name, email, password }).then(res => res.data),
   getProfile: () => API.get('/auth/profile').then(res => res.data),
   updateProfile: (userData) => API.put('/auth/profile', userData).then(res => res.data),
+   forgotPassword: (email) => API.post('/auth/forgot-password', { email }).then(res => res.data),
+  resetPassword: (token, password) => API.post('/auth/reset-password', { token, password }).then(res => res.data),
 };
 
 // Transactions API
