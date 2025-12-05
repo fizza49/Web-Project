@@ -52,6 +52,17 @@ const Home = () => {
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
+  
+  // ADDED: State for Add Transaction Modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTransaction, setNewTransaction] = useState({
+    amount: '',
+    type: 'expense',
+    category: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -73,6 +84,51 @@ const Home = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ADDED: Handle Add Transaction
+  const handleAddTransaction = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      // Validate required fields
+      if (!newTransaction.amount || !newTransaction.category || !newTransaction.description) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      // Convert amount to number
+      const transactionData = {
+        ...newTransaction,
+        amount: parseFloat(newTransaction.amount)
+      };
+
+      // Call API
+      const response = await transactionsAPI.create(transactionData);
+      
+      // Reset form
+      setNewTransaction({
+        amount: '',
+        type: 'expense',
+        category: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      // Close modal
+      setShowAddModal(false);
+      
+      // Refresh dashboard data
+      fetchDashboardData();
+      
+      // Show success message
+      alert('Transaction added successfully!');
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert(`Failed to add transaction: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -213,7 +269,6 @@ const Home = () => {
         <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      {/* CHANGED LINE: Removed ml-64, kept pt-16 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -337,13 +392,13 @@ const Home = () => {
                   <div className="text-center py-12 text-gray-500">
                     <Calendar size={64} className="mx-auto mb-4 text-gray-300" />
                     <p className="text-lg mb-3">No transactions yet</p>
-                    <Link
-                      to="/transactions"
+                    <button
+                      onClick={() => setShowAddModal(true)}
                       className="inline-flex items-center space-x-2 text-primary hover:text-primary-dark font-semibold transition-all duration-300 group"
                     >
                       <span>Add your first transaction</span>
                       <Plus size={16} className="group-hover:scale-110 transition-transform duration-300" />
-                    </Link>
+                    </button>
                   </div>
                 ) : (
                   recentTransactions.map((transaction, index) => (
@@ -411,9 +466,10 @@ const Home = () => {
                 <span>Quick Actions</span>
               </h3>
               <div className="space-y-4">
-                <Link
-                  to="/transactions?action=add"
-                  className="flex items-center space-x-4 p-5 bg-gradient-to-r from-primary/10 to-primary-dark/10 text-primary rounded-2xl hover:from-primary/20 hover:to-primary-dark/20 transition-all duration-300 transform hover:scale-105 group border border-primary/20"
+                {/* CHANGED: Link replaced with button to trigger modal */}
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center space-x-4 p-5 bg-gradient-to-r from-primary/10 to-primary-dark/10 text-primary rounded-2xl hover:from-primary/20 hover:to-primary-dark/20 transition-all duration-300 transform hover:scale-105 group border border-primary/20 w-full text-left"
                 >
                   <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary-dark rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <Plus size={24} className="text-white" />
@@ -425,7 +481,7 @@ const Home = () => {
                     </p>
                   </div>
                   <ArrowUpRight size={20} className="opacity-0 group-hover:opacity-100 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
-                </Link>
+                </button>
 
                 <Link
                   to="/budgets"
@@ -525,14 +581,160 @@ const Home = () => {
         </div>
       </div>
 
+      {/* ADDED: Add Transaction Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-in">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Add Transaction</h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  disabled={submitting}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddTransaction} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewTransaction({...newTransaction, type: 'income'})}
+                      className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                        newTransaction.type === 'income'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      disabled={submitting}
+                    >
+                      Income
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewTransaction({...newTransaction, type: 'expense'})}
+                      className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                        newTransaction.type === 'expense'
+                          ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      disabled={submitting}
+                    >
+                      Expense
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Amount *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={newTransaction.amount}
+                    onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    placeholder="0.00"
+                    disabled={submitting}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    required
+                    value={newTransaction.category}
+                    onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    disabled={submitting}
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Bills & Utilities">Bills & Utilities</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Investment">Investment</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Description *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTransaction.description}
+                    onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    placeholder="Enter description"
+                    disabled={submitting}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newTransaction.date}
+                    onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    disabled={submitting}
+                  />
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg transition-all flex items-center justify-center"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Adding...
+                      </>
+                    ) : (
+                      'Add Transaction'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add these styles to your CSS */}
       <style jsx>{`
         @keyframes growWidth {
           from { width: 0%; }
           to { width: var(--target-width); }
-        }
-        .animate-in {
-          animation: fadeInUp 0.6s ease-out;
         }
         @keyframes fadeInUp {
           from {
@@ -543,6 +745,9 @@ const Home = () => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        .animate-in {
+          animation: fadeInUp 0.3s ease-out;
         }
       `}</style>
     </div>
