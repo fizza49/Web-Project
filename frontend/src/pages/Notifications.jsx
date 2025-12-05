@@ -92,6 +92,8 @@ const Notifications = () => {
         return <AlertCircle size={24} className="text-yellow-500" />;
       case 'error':
         return <XCircle size={24} className="text-red-500" />;
+      case 'info':
+        return <Info size={24} className="text-blue-500" />;
       default:
         return <Info size={24} className="text-blue-500" />;
     }
@@ -105,6 +107,8 @@ const Notifications = () => {
         return 'from-yellow-500 to-orange-600';
       case 'error':
         return 'from-red-500 to-pink-600';
+      case 'info':
+        return 'from-blue-500 to-purple-600';
       default:
         return 'from-blue-500 to-purple-600';
     }
@@ -118,6 +122,8 @@ const Notifications = () => {
         return 'bg-gradient-to-r from-yellow-50 to-orange-100';
       case 'error':
         return 'bg-gradient-to-r from-red-50 to-pink-100';
+      case 'info':
+        return 'bg-gradient-to-r from-blue-50 to-purple-100';
       default:
         return 'bg-gradient-to-r from-blue-50 to-purple-100';
     }
@@ -154,15 +160,16 @@ const Notifications = () => {
         <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-        {/* Header */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
+        {/* Header - FIXED */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-dark rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500 opacity-75 group-hover:opacity-100"></div>
                 <div className="relative w-14 h-14 bg-gradient-to-r from-white to-gray-100 rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-500">
-                  <Bell size={28} className="text-transparent bg-gradient-to-r from-primary to-primary-dark bg-clip-text" />
+                  {/* FIXED: Removed text-transparent and bg-clip-text */}
+                  <Bell size={28} className="text-primary" />
                 </div>
                 <div className="absolute -top-1 -right-1">
                   <Sparkles className="h-4 w-4 text-primary animate-pulse" />
@@ -260,93 +267,98 @@ const Notifications = () => {
               )}
             </div>
           ) : (
-            filteredNotifications.map((notification, index) => (
-              <div
-                key={notification._id}
-                onMouseEnter={() => setHoveredNotification(notification._id)}
-                onMouseLeave={() => setHoveredNotification(null)}
-                className={`bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-white/20 transform transition-all duration-500 ${
-                  hoveredNotification === notification._id ? 'scale-105 shadow-3xl -translate-y-1' : ''
-                } ${!notification.isRead ? 'ring-2 ring-primary/20' : ''}`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start space-x-6">
-                  {/* Icon */}
-                  <div className={`p-4 rounded-2xl shadow-lg ${getNotificationBg(notification.type)} transform transition-all duration-300 ${
-                    hoveredNotification === notification._id ? 'scale-110' : ''
-                  }`}>
-                    {getNotificationIcon(notification.type)}
-                  </div>
+            filteredNotifications.map((notification, index) => {
+              // Ensure notification has a type
+              const notificationType = notification.type || 'info';
+              
+              return (
+                <div
+                  key={notification._id}
+                  onMouseEnter={() => setHoveredNotification(notification._id)}
+                  onMouseLeave={() => setHoveredNotification(null)}
+                  className={`bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-white/20 transform transition-all duration-500 ${
+                    hoveredNotification === notification._id ? 'scale-105 shadow-3xl -translate-y-1' : ''
+                  } ${!notification.isRead ? 'ring-2 ring-primary/20' : ''}`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-start space-x-6">
+                    {/* Icon */}
+                    <div className={`p-4 rounded-2xl shadow-lg ${getNotificationBg(notificationType)} transform transition-all duration-300 ${
+                      hoveredNotification === notification._id ? 'scale-110' : ''
+                    }`}>
+                      {getNotificationIcon(notificationType)}
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className={`text-xl font-bold ${
-                            !notification.isRead ? 'text-gray-900' : 'text-gray-700'
-                          }`}>
-                            {notification.title}
-                          </h4>
-                          {!notification.isRead && (
-                            <span className="px-2 py-1 bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-semibold rounded-full animate-pulse">
-                              NEW
-                            </span>
-                          )}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className={`text-xl font-bold ${
+                              !notification.isRead ? 'text-gray-900' : 'text-gray-700'
+                            }`}>
+                              {notification.title}
+                            </h4>
+                            {!notification.isRead && (
+                              <span className="px-2 py-1 bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-semibold rounded-full animate-pulse">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-600 text-lg leading-relaxed">
+                            {notification.message}
+                          </p>
+                          <p className="text-gray-400 text-sm mt-3 font-medium">
+                            {new Date(notification.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
                         </div>
-                        <p className="text-gray-600 text-lg leading-relaxed">
-                          {notification.message}
-                        </p>
-                        <p className="text-gray-400 text-sm mt-3 font-medium">
-                          {new Date(notification.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center space-x-3 ml-4">
-                        {!notification.isRead && (
-                          <button
-                            onClick={() => markAsRead(notification._id)}
-                            className="p-3 text-gray-400 hover:text-green-500 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group"
-                            title="Mark as read"
-                          >
-                            <Check size={18} className="group-hover:scale-110 transition-transform duration-300" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteNotification(notification._id)}
-                          className="p-3 text-gray-400 hover:text-red-500 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group"
-                          title="Delete notification"
-                        >
-                          <Trash2 size={18} className="group-hover:scale-110 transition-transform duration-300" />
-                        </button>
-                        <div className={`w-6 h-6 border-2 rounded-lg transition-all duration-300 ${
-                          selectedNotifications.has(notification._id)
-                            ? 'bg-gradient-to-r from-primary to-primary-dark border-transparent'
-                            : 'border-gray-300 hover:border-primary'
-                        } transform hover:scale-110`}>
-                          <input
-                            type="checkbox"
-                            checked={selectedNotifications.has(notification._id)}
-                            onChange={() => toggleSelect(notification._id)}
-                            className="opacity-0 absolute w-6 h-6 cursor-pointer"
-                          />
-                          {selectedNotifications.has(notification._id) && (
-                            <Check size={14} className="text-white transform scale-75" />
+                        {/* Actions */}
+                        <div className="flex items-center space-x-3 ml-4">
+                          {!notification.isRead && (
+                            <button
+                              onClick={() => markAsRead(notification._id)}
+                              className="p-3 text-gray-400 hover:text-green-500 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group"
+                              title="Mark as read"
+                            >
+                              <Check size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                            </button>
                           )}
+                          <button
+                            onClick={() => deleteNotification(notification._id)}
+                            className="p-3 text-gray-400 hover:text-red-500 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group"
+                            title="Delete notification"
+                          >
+                            <Trash2 size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                          </button>
+                          <div className={`w-6 h-6 border-2 rounded-lg transition-all duration-300 ${
+                            selectedNotifications.has(notification._id)
+                              ? 'bg-gradient-to-r from-primary to-primary-dark border-transparent'
+                              : 'border-gray-300 hover:border-primary'
+                          } transform hover:scale-110`}>
+                            <input
+                              type="checkbox"
+                              checked={selectedNotifications.has(notification._id)}
+                              onChange={() => toggleSelect(notification._id)}
+                              className="opacity-0 absolute w-6 h-6 cursor-pointer"
+                            />
+                            {selectedNotifications.has(notification._id) && (
+                              <Check size={14} className="text-white transform scale-75" />
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

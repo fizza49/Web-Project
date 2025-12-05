@@ -213,7 +213,8 @@ const Home = () => {
         <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      {/* CHANGED LINE: Removed ml-64, kept pt-16 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-3">
