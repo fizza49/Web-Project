@@ -1,5 +1,5 @@
 # EDUBUDGET
-An app for students to track their expenses and finances.
+An free app for students to track their expenses and finances.
 
 ## OBJECTIVE
 To empower students with simple, intuitive tools for tracking finances, managing budgets, and building healthy money habits that promote financial literacy and independence.
